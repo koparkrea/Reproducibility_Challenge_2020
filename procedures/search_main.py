@@ -2,11 +2,8 @@ import os, torch
 import sys
 cwd = os.getcwd()
 sys.path.append(cwd)
-
-
 from procedures.compute_average import AverageMeter
-#Setting 
-#torch.cuda.set_device(2)
+
 
 def obtain_accuracy(output, target, topk=(1,)):
     maxk = max(topk)
@@ -69,21 +66,7 @@ def search_train(search_loader, network, criterion, scheduler, base_optimizer, a
         #base_targets = base_targets.cuda(non_blocking = True)
         arch_inputs = arch_inputs.cuda(non_blocking = True)
         arch_targets = arch_targets.cuda(non_blocking = True)
-        """
-        # update base parameters
-        if pretrain:
-            network.eval()
-            with torch.no_grad():
-                network.apply(change_key('search_mode','basic'))
-                logits, expected_flop = network(base_inputs)
-            base_loss = criterion(logits, base_targets)
-        else:
-            base_optimizer.zero_grad()
-            logits, expected_flop = network(base_inputs)
-            base_loss = criterion(logits, base_targets)
-            base_loss.backward()
-            base_optimizer.step()
-        """
+        
         # update arch parameters
         arch_optimizer.zero_grad()
         logits, expected_flop = network(arch_inputs)
@@ -332,21 +315,7 @@ def rev_train(search_loader, network, criterion, scheduler, base_optimizer, arch
         #base_targets = base_targets.cuda(non_blocking = True)
         arch_inputs = arch_inputs.cuda(non_blocking=True)
         arch_targets = arch_targets.cuda(non_blocking = True)
-        """
-        # update base parameters
-        if pretrain:
-            network.eval()
-            with torch.no_grad():
-                network.apply(change_key('search_mode','basic'))
-                logits, expected_flop = network(base_inputs)
-            base_loss = criterion(logits, base_targets)
-        else:
-            base_optimizer.zero_grad()
-            logits, expected_flop = network(base_inputs)
-            base_loss = criterion(logits, base_targets)
-            base_loss.backward()
-            base_optimizer.step()
-        """
+        
         # update arch parameters
         arch_optimizer.zero_grad()
         logits = network(arch_inputs)

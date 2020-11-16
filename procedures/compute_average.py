@@ -1,7 +1,3 @@
-
-
-
-
 class AverageMeter(object):
     def __init__(self):
         self.reset()

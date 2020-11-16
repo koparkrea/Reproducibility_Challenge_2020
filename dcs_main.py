@@ -67,12 +67,13 @@ def main(args):
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
     torch.set_num_threads(args.workers)
-
+    
+    # Fix seed for equivalent result
     prepare_seed(args.rand_seed)
-    #logger = 
 
     train_data, valid_data, xshape, class_num = get_datasets(args.dataset, args.data_path, args.cutout_length)
     valid_loader = torch.utils.data.DataLoader(valid_data, batch_size = args.batch_size, shuffle = False, num_workers = args.workers, pin_memory = True)
+
 
     split_file_path = Path(args.split_path)
     assert split_file_path.exists(), 'invalid path = {:}'.format(split_file_path)
@@ -129,6 +130,7 @@ def main(args):
     else:
         start_epoch, valid_accuracies, arch_genotypes = 0, {'best':-1}, {}
         print('-'*10 + 'initilalize start epoch and valid_accuracies'+'-'*10) 
+
     # main procedure
     train_func, valid_func = get_procedures(args.procedure)
     total_epoch = optim_config.epochs + optim_config.warmup
@@ -157,18 +159,22 @@ def main(args):
         cur_FLOP, genotype = search_model.get_flop('genotype',model_config._asdict(), None)
         arch_genotypes[epoch] = genotype
         
+        """
         # evaluate performance
         if (epoch % args.eval_frequency == 0) or (epoch + 1 == total_epoch):
             valid_loss, valid_acc1, valid_acc5 = valid_func(search_valid_loader, network, criterion, epoch_str, args.print_freq_eval)
             valid_accuracies[epoch] = valid_acc1
         print('******** VALID [{:}] loss = {:.6f}, accuracy@1 = {:.2f}, accuracy@5 = {:.2f} | Best-valid-Acc@1 = {:.2f}, Error@1 = {:.2f}'.format(epoch_str, valid_loss, valid_acc1, valid_acc5, valid_accuracies['best'], 100-valid_accuracies['best']))
+        """
 
         if train_acc1 > valid_accuracies['best']:
             valid_accuracies['best'] = train_acc1
             arch_genotypes['best'] = genotype
             find_best = True
             #print('Currently, the best validation accuracy found at {:03d}-epoch :: acc@1 = {:.2f}, error@1 = {:.2f}, error@5 = {:.2f}'.format(epoch, valid_acc1, valid_acc5, 100-valid_acc1, 100-valid_acc5))
+        
 
+        # Save selected pruning ratio and criteria for each layer
         index_list = arch_genotypes[epoch]['xchannels']
         cri_list = arch_genotypes[epoch]['layer_criteria']
         probe_list = arch_genotypes[epoch]['probe_list']
@@ -179,7 +185,7 @@ def main(args):
         with open(ratio_path__,'wb') as f:
             pickle.dump(probe_list,f)
 
-
+        # save current loader
         save_path = save_checkpoint({
             'epoch' : epoch,
             'args' : deepcopy(args),

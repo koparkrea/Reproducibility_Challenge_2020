@@ -102,10 +102,6 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         valid_accuracies = checkpoint['valid_accuracies']
     else:
-        #best_path = os.path.join(os.getcwd(), 'result','state_dict', 'search', 'best_path', 'best.th')
-        #bestpoint = torch.load(best_path)
-        #search_model.load_state_dict(bestpoint['search_model'])
-        #print('-'*10 + 'loading best model from search_model' + '-'*10)
         start_epoch, valid_accuracies = 0, {'best':-1}
         print('-'*10 + 'initialize start epoch and valid_accuracies' + '-'*10) 
 

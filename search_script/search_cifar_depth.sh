@@ -17,7 +17,7 @@ resume=$8
 pretrain=$9
 
 
-
+# search from scratch
 cifar10_resnet56_nono(){
 	echo -e 'nono'
 	python3 ./search_main.py --dataset ${dataset} \
@@ -40,6 +40,7 @@ cifar10_resnet56_nono(){
 	--print_freq_eval 200 
 }
 
+# search from stopped
 cifar10_resnet56_yesno(){
 	echo -e 'yesno'
 	python3 ./search_main.py --dataset ${dataset} \
@@ -63,6 +64,7 @@ cifar10_resnet56_yesno(){
 	--resume
 }
 
+# search from pretrained weight
 cifar10_resnet56_noyes(){
 	echo -e 'noyes'
 	python3 ./search_main.py --dataset ${dataset} \

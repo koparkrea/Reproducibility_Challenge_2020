@@ -1,5 +1,9 @@
 import pickle, os
 
+
+
+
+# pruning BatchNorm weigth 
 def BNselection(start_index, num_conv = 1):
     ratio_path = os.path.join(os.getcwd(),'result', 'cifar10_criteria_PR_BN_last_2', 'which_ratio_epoch_599_600_best.pkl')
     criteria_path = os.path.join(os.getcwd(),'result', 'cifar10_criteria_PR_BN_last_2', 'which_criteria_epoch_599_600_best.pkl')

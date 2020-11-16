@@ -39,6 +39,7 @@ def pick_index_cri(path,number = 599):
         criteria = pickle.load(f)
     return index, criteria
 
+
 def get_pruned_model(model, path, number):
     pretrained_model = os.path.join(os.getcwd(), 'result', 'state_dict', 'basic', 'best_path', 'best.th')
     checkpoint = torch.load(pretrained_model)
@@ -53,7 +54,6 @@ def get_pruned_model(model, path, number):
  
     output_channel_index = filter_selection(model_weight['layers.0.weights'], index[1], criteria[0])
     del pruned_weight['layers.0.weights']
-    #pruned_weight['layers.0.weights'] = model_weight['layers.0.weights'][output_channel_index]
     pruned_weight['layers.0.conv.weight'] = model_weight['layers.0.conv.weight'][output_channel_index]
     input_channel_index = 0
     i = 0
@@ -74,14 +74,7 @@ def get_pruned_model(model, path, number):
                 output_channel_index = filter_selection(model_weight[c], index[i+1], criteria[i])
                 del pruned_weight[c]
                 continue
-                """
-                print(len(index), len(criteria),i)
-                output_channel_index = filter_selection(model_weight[c], index[i+1], criteria[i])
-                input_weight= model_weight[c][:, input_channel_index]
-                pruned_weight[c] = input_weight[output_channel_index]
-                print(c)
-                print(i)
-                """
+                
             elif 'conv.weight' in c:
                 input_weight = model_weight[c][:, input_channel_index]
                 pruned_weight[c] = input_weight[output_channel_index]
@@ -103,17 +96,11 @@ def get_pruned_model(model, path, number):
             if 'downsample.weights' in c:
                 output_channel_index_d = filter_selection(model_weight[c], index[start+1], criteria[start])
                 del pruned_weight[c]
-                """
-                input_weight = model_weight[c][:,input_channel_index_d]
-                print(input_weight.shape, len(output_channel_index_d))
-                pruned_weight[c] = input_weight[output_channel_index_d]
-                print(c)
-                """
+               
             elif 'downsample.choices_tensor' in c:
                 del pruned_weight[c]
 
             elif 'downsample.conv.weight' in c:
-                #output_channel_index = filter_selection(model_weight[c], index[downsample[start]+1], criteria[downsample[start]])
                 input_weight = model_weight[c][:,input_channel_index_d]
                 pruned_weight[c] = input_weight[output_channel_index_d]
 
@@ -126,35 +113,7 @@ def get_pruned_model(model, path, number):
         else:
             continue
 
-
-    """
-    start = 0
-
-    for c in model_weight:
-        if 'downsample' in c:
-            if 'conv' and 'weights' in c:
-                output_channel_index = filter_selection(model_weight[c], index[downsample[start]+1], criteria[downsample[start]])
-                input_weight = model_weight[c][:input_channel_index_d]
-                pruned_weight[c] = model_weight[c][output_channel_index]
-
-            elif 'conv.weight' in c:
-                output_channel_index = filter_selection(model_weight[c], index[downsample[start]+1], criteria[downsample[start]])
-                input_weight = model_weight[c][:input_channel_index_d]
-                pruned_weight[c] = model_weight[c][output_channel_index]
-
-            elif 'choices_tensor' in c:
-                del pruned_weigth[c]
-
-                
-            elif 'downsample.BNs.num_batches_tracked' in c:
-                pruned_weight[c] = torch.Tensor([0])
-                input_channel_index_d = output_channel_index
-            
-        else:
-            continue
-    """
-
-    model.load_state_dict(pruned_weight, strict=False )
+        model.load_state_dict(pruned_weight, strict=False )
     return model
 
 
@@ -209,18 +168,6 @@ def selectwithP(parameter, tau, just_prob = False, num = 2, eps = 1e-7):
     return selected_index, selected_probs
 
 
-def linear_forward(inputs, linear):
-    if linear is None:
-        return inputs
-    iC = inputs.size(-1)
-    weight = linear.weight[:,:iC] # THIS HAS TO BE CHANGED FOR CRITERIA SEARCH
-    if linear.bias is None:
-        bias = None
-    else:
-        bias = linear.bias
-    return nn.functional.linear(inputs, weight, bias)
-
-
 def get_width_choice(nout):
     pruning_ratio = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     if nout is None:
@@ -242,20 +189,6 @@ def get_width_choice_finetune(stage):
     nOut = sorted(list(set(nOut)))
     return tuple(nOut)
 
-def get_width_choice_limit(nout, stage):
-    if stage == 0 or stage == 1:
-        pruning_ratio = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    elif stage == 2:
-        pruning_ratio = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    else:
-        raise ValueError('invalid stage : {:}'.format(stage))
-
-    if nout is None:
-        return len(pruning_ratio)
-    else:
-        nOut = [int(nout*i) for i in pruning_ratio]
-        nOut = sorted(list(set(nOut)))
-        return tuple(nOut)
 
 def ChannelWiseInter(inputs, oC, mode = 'v2'):
     if mode == 'v1':
@@ -264,6 +197,7 @@ def ChannelWiseInter(inputs, oC, mode = 'v2'):
         return ChannelWiseInterV2(inputs, oC)
     else:
         raise ValueError('invalid mode = {:}'.format(mode))
+
 
 def ChannelWiseInterV1(inputs, oC):
     assert inputs.dim() == 4, 'invalid dimension = {:}'.format(inputs.dim())
@@ -282,6 +216,7 @@ def ChannelWiseInterV1(inputs, oC):
         outputs[:,i,:,:] = values
     return outputs
 
+
 def ChannelWiseInterV2(inputs, oC):
     assert inputs.dim() == 4, 'invalid dimension = {:}'.format(inputs.dim())
     batch, C, H, W = inputs.size()
@@ -290,15 +225,9 @@ def ChannelWiseInterV2(inputs, oC):
     else:
         return nn.functional.adaptive_avg_pool3d(inputs, (oC, H, W))
 
+
 def Align(inputs, output_channel_index, nout):
     batch, h, w = inputs.shape[0], inputs.shape[2], inputs.shape[3]
     mask = torch.zeros((batch, nout, h, w),device = inputs.device)
-    #mask = np.zeros((batch,nout,h,w))
-    """
-    for num, each_ba in enumerate(inputs):
-        for idx, vec in zip(output_channel_index, each_ba):
-            mask[num][idx] = vec
-    return mask
-    """
     mask[:,output_channel_index] = inputs
     return mask
